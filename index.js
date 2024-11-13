@@ -4,7 +4,7 @@ const path=require('path')
 const {connectMongoDB}=require("./connect")
 
 const {logReqRes}=require('./middlewares')
-const {restrictToLoggedInUserOnly,checkAuth}=require('./middlewares/auth')
+const {restrictTo,checkForAuthentication}=require('./middlewares/auth')
 const cookieParser=require('cookie-parser')
 
 const urlRoute=require('./routes/url')
@@ -20,9 +20,10 @@ connectMongoDB('mongodb://127.0.0.1:27017/short-url')
 
 //middleware
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser())
 app.use(express.json())
 app.use(logReqRes("log.txt"))
-app.use(cookieParser())
+app.use(checkForAuthentication)
 
 
 //template engine
@@ -30,8 +31,8 @@ app.set('view engine','ejs')
 app.set('views',path.resolve('./views'))
 
 //routes
-app.use('/url', restrictToLoggedInUserOnly,urlRoute)
-app.use('/',checkAuth,staticRoute)
+app.use('/url',restrictTo(["ADMIN"],["NORMAL"]),urlRoute)
+app.use('/',staticRoute)
 app.use('/user',userRoute)
 
 app.listen(PORT,()=>console.log("Server runnign on port:"+PORT))
